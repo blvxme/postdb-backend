@@ -7,9 +7,9 @@ from shutil import copy
 from tempfile import gettempdir
 from uuid import UUID, uuid4
 
-from common.app_config import app_config
+from app.common.app_config import app_config
 
-from service.python_code_context import python_code_context
+from app.service.python_code_context import python_code_context
 
 
 @dataclass(frozen=True)
