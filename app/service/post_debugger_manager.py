@@ -19,10 +19,18 @@ class PostDebuggerManager:
 
     async def run_debugging(self) -> None:
         wrapper_path = Path(gettempdir()).resolve() / "postdb" / str(self._uuid) / "python_code_wrapper.py"
-        await self._loop.run_in_executor(
-            None,
-            lambda: self._debugger.run(f"import runpy; runpy.run_path('{wrapper_path}')")
-        )
+
+        def run_debugger() -> None:
+            python_code_path = Path(wrapper_path).parent / "python_code.py"
+
+            try:
+                self._debugger.set_breakpoints(python_code_path)
+            except Exception as e:
+                print(f"Failed to set breakpoints: {e}")
+
+            self._debugger.run(f"import runpy; runpy.run_path('{wrapper_path}')")
+
+        await self._loop.run_in_executor(None, run_debugger)
 
     async def run_command(self, command: str) -> str:
         await self._command_queue.send_message(command)
