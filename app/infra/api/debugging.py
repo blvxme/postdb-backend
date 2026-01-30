@@ -21,6 +21,9 @@ async def debug(websocket: WebSocket, uuid: UUID) -> None:
     try:
         while True:
             command = await websocket.receive_text()
+            command = command.strip()
+            print(f"New command: \"{command}\"")
+
             command_result = await debugger_manager.run_command(command)
             await websocket.send_text(command_result)
     except Exception as e:
