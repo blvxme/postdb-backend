@@ -18,17 +18,21 @@ class PostDebuggerManager:
         self._debugger = PostDebugger(loop, self._command_queue, self._output_queue)
 
     async def run_debugging(self) -> None:
-        wrapper_path = Path(gettempdir()).resolve() / "postdb" / str(self._uuid) / "python_code_wrapper.py"
+        python_code_path = Path(gettempdir()).resolve() / "postdb" / str(self._uuid) / "python_code.py"
+
+        python_code_source = None
+        with open(python_code_path, "r", encoding="utf-8") as f:
+            python_code_source = f.read()
+
+        python_code = compile(python_code_source, python_code_path, "exec")
 
         def run_debugger() -> None:
-            python_code_path = Path(wrapper_path).parent / "python_code.py"
-
             try:
                 self._debugger.set_breakpoints(python_code_path)
             except Exception as e:
                 print(f"Failed to set breakpoints: {e}")
 
-            self._debugger.run(f"import runpy; runpy.run_path('{wrapper_path}')")
+            self._debugger.run(python_code)
 
         await self._loop.run_in_executor(None, run_debugger)
 
