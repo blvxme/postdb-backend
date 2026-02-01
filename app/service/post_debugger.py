@@ -48,20 +48,27 @@ class PostDebugger(Bdb):
                 print(f"Failed to set breakpoint at {filename}:{line_number}: {e}")
 
     async def handle_stop(self) -> None:
-        # await self._output_queue.send_message(...)
-
         command = await self._command_queue.receive_message()
+
         await self._execute_command(command)
+
+        output_message = ""
+        if self._current_frame is not None:
+            output_message = f"co_filename is {self._current_frame.f_code.co_filename}, "
+            output_message += f"co_name is {self._current_frame.f_code.co_name}, "
+            output_message += f"f_lineno is {self._current_frame.f_lineno}"
+        await self._output_queue.send_message(output_message)
 
     async def _execute_command(self, command: str) -> None:
         if command == "continue":
             self.set_continue()
         elif command == "step":
-            # TODO: remove this command
+            # TODO: remove this command?
             self.set_step()
         elif command == "quit":
             self.set_quit()
 
+    # Метод для нахождения номеров строк, на которых будут поставлены точки останова
     def _find_line_numbers(self, path: Path) -> list[int]:
         if not path.exists():
             return []
@@ -72,8 +79,33 @@ class PostDebugger(Bdb):
         line_numbers = []
 
         for node in tree.body:
-            if isinstance(node, FunctionDef) and node.name in ("set_state", "setVariable"):
-                line_numbers.append(node.lineno)
+            if isinstance(node, FunctionDef) and node.name == "setVariable":
+                # Добавляем в список номеров строк номер строки начала функции setVariable
+                if node.body:
+                    # Ставим точку останова в теле функции setVariable
+
+                    # Если поставить точку останова на строке, на которой определена сигнатура функции setVariable,
+                    # то отладчик остановится только один раз (при создании функции setVariable)
+                    first_body_line = node.body[0].lineno
+                    line_numbers.append(first_body_line)
+                else:
+                    # На случай пустой функции
+                    line_numbers.append(node.lineno)
+            elif isinstance(node, FunctionDef) and node.name == "set_state":
+                # Добавляем в список номеров строк номер строки начала функции set_state
+                if node.body:
+                    # Ставим точку останова в теле функции set_state
+
+                    # Если поставить точку останова на строке, на которой определена сигнатура функции set_state,
+                    # то отладчик остановится только один раз (при создании функции set_state)
+
+                    # "+ 1" нужен для того, чтобы избежать создания точки останова на объявлении глобальной переменной
+                    # (например: global Vars)
+                    first_body_line = node.body[0].lineno + 1
+                    line_numbers.append(first_body_line)
+                else:
+                    # На случай пустой функции
+                    line_numbers.append(node.lineno)
 
         def visit_class(class_node: ClassDef, inside_program: bool) -> None:
             inherits_program = any(
@@ -86,7 +118,20 @@ class PostDebugger(Bdb):
 
             for child in class_node.body:
                 if isinstance(child, FunctionDef) and child.name == "run" and current_inside:
-                    line_numbers.append(child.lineno)
+                    # Добавляем в список номеров строк номер строки начала метода run
+                    if child.body:
+                        # Ставим точку останова в теле метода run
+
+                        # Если поставить точку останова на строке, на которой определена сигнатура метода run,
+                        # то отладчик остановится только один раз (при создании метода run)
+
+                        # "+ 9" нужен для того, чтобы избежать создания точки останова на объявлении глобальной переменной
+                        # (например: global inVars)
+                        first_body_line = child.body[0].lineno + 9
+                        line_numbers.append(first_body_line)
+                    else:
+                        # На случай пустого метода
+                        line_numbers.append(child.lineno)
 
             for child in class_node.body:
                 if isinstance(child, ClassDef):
