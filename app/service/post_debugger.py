@@ -4,9 +4,10 @@ from asyncio import AbstractEventLoop, run_coroutine_threadsafe
 from bdb import Bdb
 from pathlib import Path
 from types import FrameType
-from typing import Optional
+from typing import Optional, Any
 
 from app.service.communication import CommunicationQueue
+from app.service.output_utils import get_output_message
 
 
 class PostDebugger(Bdb):
@@ -24,9 +25,13 @@ class PostDebugger(Bdb):
         self._output_queue = output_queue
 
         self._current_frame: Optional[FrameType] = None
+        self._current_locals: dict[str, Any] = {}
+        self._current_globals: dict[str, Any] = {}
 
     def user_line(self, frame: FrameType) -> None:
         self._current_frame = frame
+        self._current_locals = dict(self._current_frame.f_locals)
+        self._current_globals = dict(self._current_frame.f_globals)
 
         future = run_coroutine_threadsafe(self.handle_stop(), self._loop)
         future.result()
@@ -49,14 +54,9 @@ class PostDebugger(Bdb):
 
     async def handle_stop(self) -> None:
         command = await self._command_queue.receive_message()
-
         await self._execute_command(command)
 
-        output_message = ""
-        if self._current_frame is not None:
-            output_message = f"co_filename is {self._current_frame.f_code.co_filename}, "
-            output_message += f"co_name is {self._current_frame.f_code.co_name}, "
-            output_message += f"f_lineno is {self._current_frame.f_lineno}"
+        output_message = await get_output_message(self._current_locals, self._current_globals)
         await self._output_queue.send_message(output_message)
 
     async def _execute_command(self, command: str) -> None:
