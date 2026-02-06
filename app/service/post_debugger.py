@@ -62,7 +62,28 @@ class PostDebugger(Bdb):
 
     async def _execute_command(self, command: Command) -> None:
         if command.name == CommandName.SET_VARIABLE:
-            ...
+            if self._current_frame is not None:
+                variable_name = command.args[0]
+                variable = self._current_frame.f_globals[variable_name]
+
+                current_variable_value = variable.value[0]
+                current_variable_value_type = type(current_variable_value)
+
+                new_variable_value = command.args[1]
+                if current_variable_value_type == bool:
+                    new_variable_value_bool = new_variable_value.lower() in ("true", "yes", "on", "1")
+                    variable.__set__(new_variable_value_bool)
+                elif current_variable_value_type == int:
+                    new_variable_value_int = int(new_variable_value)
+                    variable.__set__(new_variable_value_int)
+                elif current_variable_value_type == float:
+                    new_variable_value_float = float(new_variable_value)
+                    variable.__set__(new_variable_value_float)
+                else:
+                    new_variable_value_str = new_variable_value
+                    variable.__set__(new_variable_value_str)
+
+            self.set_continue()
         elif command.name == CommandName.STEP:
             self.set_step()
         elif command.name == CommandName.CONTINUE:
