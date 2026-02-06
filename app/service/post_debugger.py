@@ -6,6 +6,7 @@ from pathlib import Path
 from types import FrameType
 from typing import Optional, Any
 
+from app.core.command import Command, CommandName
 from app.service.communication import CommunicationQueue
 from app.service.output_utils import get_output_message
 
@@ -14,8 +15,8 @@ class PostDebugger(Bdb):
     def __init__(
             self,
             loop: AbstractEventLoop,
-            command_queue: CommunicationQueue,
-            output_queue: CommunicationQueue
+            command_queue: CommunicationQueue[Command],
+            output_queue: CommunicationQueue[str]
     ) -> None:
         super().__init__()
 
@@ -59,13 +60,14 @@ class PostDebugger(Bdb):
         output_message = await get_output_message(self._current_locals, self._current_globals)
         await self._output_queue.send_message(output_message)
 
-    async def _execute_command(self, command: str) -> None:
-        if command == "continue":
-            self.set_continue()
-        elif command == "step":
-            # TODO: remove this command?
+    async def _execute_command(self, command: Command) -> None:
+        if command.name == CommandName.SET_VARIABLE:
+            ...
+        elif command.name == CommandName.STEP:
             self.set_step()
-        elif command == "quit":
+        elif command.name == CommandName.CONTINUE:
+            self.set_continue()
+        elif command.name == CommandName.QUIT:
             self.set_quit()
 
     # Метод для нахождения номеров строк, на которых будут поставлены точки останова

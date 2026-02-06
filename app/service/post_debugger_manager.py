@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import gettempdir
 from uuid import UUID
 
+from app.core.command import Command
 from app.service.communication import CommunicationQueue
 from app.service.post_debugger import PostDebugger
 
@@ -12,8 +13,8 @@ class PostDebuggerManager:
         self._uuid = uuid
         self._loop = loop
 
-        self._command_queue = CommunicationQueue()
-        self._output_queue = CommunicationQueue()
+        self._command_queue = CommunicationQueue[Command]()
+        self._output_queue = CommunicationQueue[str]()
 
         self._debugger = PostDebugger(loop, self._command_queue, self._output_queue)
 
@@ -36,7 +37,7 @@ class PostDebuggerManager:
 
         await self._loop.run_in_executor(None, run_debugger)
 
-    async def run_command(self, command: str) -> str:
+    async def run_command(self, command: Command) -> str:
         await self._command_queue.send_message(command)
         result = await self._output_queue.receive_message()
         return result
