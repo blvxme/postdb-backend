@@ -1,11 +1,10 @@
 from asyncio import AbstractEventLoop
-from pathlib import Path
-from tempfile import gettempdir
 from uuid import UUID
 
+from app.config import config
 from app.core.command import Command
-from app.service.communication import CommunicationQueue
-from app.service.post_debugger import PostDebugger
+from app.core.communication import CommunicationQueue
+from app.core.debugger import PostDebugger
 
 
 class PostDebuggerManager:
@@ -19,7 +18,7 @@ class PostDebuggerManager:
         self._debugger = PostDebugger(loop, self._command_queue, self._output_queue)
 
     async def run_debugging(self) -> None:
-        python_code_path = Path(gettempdir()).resolve() / "postdb" / str(self._uuid) / "python_code.py"
+        python_code_path = config.TRANSLATION_PATH / str(self._uuid) / "python_code.py"
 
         python_code_source = None
         with open(python_code_path, "r", encoding="utf-8") as f:

@@ -1,5 +1,4 @@
-from _ast import FunctionDef, ClassDef, Name, Attribute
-from ast import parse
+from ast import FunctionDef, ClassDef, Name, Attribute, parse
 from asyncio import AbstractEventLoop, run_coroutine_threadsafe
 from bdb import Bdb
 from pathlib import Path
@@ -7,8 +6,8 @@ from types import FrameType
 from typing import Optional, Any
 
 from app.core.command import Command, CommandName
-from app.service.communication import CommunicationQueue
-from app.service.output_utils import get_output_message
+from app.core.communication import CommunicationQueue
+from app.core.util.output import build_output_message
 
 
 class PostDebugger(Bdb):
@@ -57,7 +56,7 @@ class PostDebugger(Bdb):
         command = await self._command_queue.receive_message()
         await self._execute_command(command)
 
-        output_message = await get_output_message(self._current_locals, self._current_globals)
+        output_message = await build_output_message(self._current_locals, self._current_globals)
         await self._output_queue.send_message(output_message)
 
     async def _execute_command(self, command: Command) -> None:

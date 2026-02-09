@@ -1,8 +1,8 @@
-import dataclasses
-import enum
+from dataclasses import dataclass
+from enum import Enum
 
 
-class CommandName(enum.Enum):
+class CommandName(Enum):
     SET_VARIABLE = "SET_VARIABLE"
 
     STEP = "STEP"
@@ -10,13 +10,13 @@ class CommandName(enum.Enum):
     QUIT = "QUIT"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class Command:
     name: CommandName
     args: list[str]
 
     @classmethod
-    def from_string(cls, raw_command: str) -> "Command":
+    async def from_string(cls, raw_command: str) -> "Command":
         parts = raw_command.strip().split()
         if not parts:
             raise ValueError("Empty command")

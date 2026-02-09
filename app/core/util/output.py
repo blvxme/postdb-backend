@@ -3,7 +3,7 @@ from json import dumps
 from typing import Any
 
 
-async def get_output_message(local_output: dict[str, Any], global_output: dict[str, Any]) -> str:
+async def build_output_message(local_output: dict[str, Any], global_output: dict[str, Any]) -> str:
     process_name = ""
     if "self" in local_output:
         self_object = local_output["self"]
