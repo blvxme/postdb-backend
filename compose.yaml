@@ -1,0 +1,12 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - "8000"
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - /tmp/postdb:/tmp/postdb
