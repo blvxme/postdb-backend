@@ -32,7 +32,7 @@ async def request_debugging(payload: DebuggingRequestPayload) -> DebuggingReques
     return DebuggingRequestResult(uuid=str(uuid), translator_output=translator_output, code_info=code_info)
 
 
-@router.websocket("/debug/{debug_uuid}")
+@router.websocket("/debug/{uuid}")
 async def debug(websocket: WebSocket, uuid: UUID) -> None:
     await websocket.accept()
 
