@@ -8,5 +8,6 @@ repos:
           - "--config-file=mypy.ini"
           - "app"
         additional_dependencies:
+          - pydantic-settings>=2.0
           - pydantic>=2.0
           - fastapi

@@ -6,7 +6,7 @@ from shutil import copy
 from subprocess import PIPE
 from uuid import UUID, uuid4
 
-from app.config import config
+from app.settings import settings
 from app.service.util.context import python_code_context
 
 
@@ -37,15 +37,15 @@ class DebuggingRequestProcessor:
         return uuid, translator_output, code_info
 
     async def _prepare_translation_path(self, uuid: UUID) -> Path:
-        makedirs(config.TRANSLATION_PATH, exist_ok=True)
+        makedirs(settings.TRANSLATION_PATH, exist_ok=True)
 
-        post2py_path = config.RESOURCES_PATH / "post2py.jar"
-        copy(post2py_path, config.TRANSLATION_PATH)
+        post2py_path = settings.RESOURCES_PATH / "post2py.jar"
+        copy(post2py_path, settings.TRANSLATION_PATH)
 
-        translation_path = config.TRANSLATION_PATH / str(uuid)
+        translation_path = settings.TRANSLATION_PATH / str(uuid)
         makedirs(translation_path)
 
-        mute_types_path = config.RESOURCES_PATH / "MuteTypes.py"
+        mute_types_path = settings.RESOURCES_PATH / "MuteTypes.py"
         copy(mute_types_path, translation_path)
 
         return translation_path
@@ -57,7 +57,7 @@ class PostCodeTranslator:
         with open(post_code_path, "w", encoding="utf-8") as f:
             f.write(post_code)
 
-        translator_path = config.TRANSLATION_PATH / "post2py.jar"
+        translator_path = settings.TRANSLATION_PATH / "post2py.jar"
         python_code_path = destination_path / "python_code.py"
 
         process = await create_subprocess_exec(
